@@ -48,12 +48,23 @@ if ($method === 'GET') {
         $plessi = $pdo->query('SELECT id, plesso AS label FROM Plesso ORDER BY plesso')->fetchAll();
         $target = $pdo->query('SELECT id, abbreviazione AS label FROM Target ORDER BY abbreviazione')->fetchAll();
         $curriculum = $pdo->query('SELECT id, curriculum AS label FROM Curriculum ORDER BY curriculum')->fetchAll();
+        $obiettivi = $pdo->query(
+            <<<SQL
+                SELECT
+                    o.id,
+                    CONCAT(t.tipoObiettivo, ' - ', o.obiettivo) AS label
+                FROM Obiettivo o
+                INNER JOIN TipoObiettivo t ON t.id = o.idTipoObiettivo
+                ORDER BY t.tipoObiettivo, o.id
+            SQL
+        )->fetchAll();
         app_json([
             'finanziamenti' => $finanziamenti,
             'istituti' => $istituti,
             'plessi' => $plessi,
             'target' => $target,
             'curriculum' => $curriculum,
+            'obiettivi' => $obiettivi,
         ]);
     }
 
@@ -103,20 +114,53 @@ if ($method === 'GET') {
                     m.discipline,
                     m.professione,
                     l.laboratorio,
-                    t.abbreviazione AS target
+                    t.abbreviazione AS target,
+                    COUNT(om.id) AS obiettiviCount
                 FROM Modulo m
                 INNER JOIN Laboratorio l ON l.id = m.idLaboratorio
                 INNER JOIN Target t ON t.id = m.idTarget
+                LEFT JOIN ObiettiviModulo om ON om.idModulo = m.id
                 WHERE l.idProgetto = :id
+                GROUP BY
+                    m.id,
+                    m.idLaboratorio,
+                    m.idTarget,
+                    m.modulo,
+                    m.descrizione,
+                    m.discipline,
+                    m.professione,
+                    l.laboratorio,
+                    t.abbreviazione
                 ORDER BY l.laboratorio, m.modulo
             SQL
         );
         $moduliStatement->execute(['id' => $projectId]);
 
+        $obiettiviModuloStatement = $pdo->prepare(
+            <<<SQL
+                SELECT
+                    om.id,
+                    om.idModulo,
+                    om.idObiettivo,
+                    om.priorita,
+                    o.obiettivo,
+                    t.tipoObiettivo
+                FROM ObiettiviModulo om
+                INNER JOIN Modulo m ON m.id = om.idModulo
+                INNER JOIN Laboratorio l ON l.id = m.idLaboratorio
+                INNER JOIN Obiettivo o ON o.id = om.idObiettivo
+                INNER JOIN TipoObiettivo t ON t.id = o.idTipoObiettivo
+                WHERE l.idProgetto = :id
+                ORDER BY om.idModulo, om.priorita, om.id
+            SQL
+        );
+        $obiettiviModuloStatement->execute(['id' => $projectId]);
+
         app_json([
             'project' => $project,
             'laboratori' => $laboratoriStatement->fetchAll(),
             'moduli' => $moduliStatement->fetchAll(),
+            'obiettiviModulo' => $obiettiviModuloStatement->fetchAll(),
         ]);
     }
 

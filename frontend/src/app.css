@@ -433,6 +433,68 @@ th {
 	background: rgba(14, 165, 233, 0.08);
 }
 
+.laboratory-summary {
+	display: grid;
+	gap: 0.9rem;
+	margin-bottom: 1rem;
+}
+
+.laboratory-summary h4 {
+	margin: 0.25rem 0 0;
+}
+
+.laboratory-summary p {
+	margin: 0;
+}
+
+.laboratory-summary-metrics {
+	display: flex;
+	gap: 1rem;
+	flex-wrap: wrap;
+	color: var(--muted);
+}
+
+.laboratory-switcher {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.55rem;
+}
+
+.laboratory-switcher .selected {
+	border-color: var(--accent);
+}
+
+.objectives-editor {
+	display: grid;
+	gap: 0.8rem;
+	margin-bottom: 1rem;
+}
+
+.objective-row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 110px auto;
+	gap: 0.75rem;
+	align-items: end;
+}
+
+.priority-field {
+	margin-bottom: 0;
+}
+
+.small-text {
+	font-size: 0.9rem;
+}
+
+.objective-summary-list {
+	margin: 0.5rem 0 0;
+	padding-left: 1rem;
+	color: var(--muted);
+}
+
+.objective-summary-list li {
+	margin-bottom: 0.25rem;
+}
+
 @media (max-width: 1200px) {
 	.app-shell {
 		grid-template-columns: 1fr;
@@ -458,5 +520,9 @@ th {
 
 	.project-detail-header {
 		flex-direction: column;
+	}
+
+	.objective-row {
+		grid-template-columns: 1fr;
 	}
 }

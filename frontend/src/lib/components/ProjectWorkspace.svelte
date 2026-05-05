@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
-	import { createProject, createRecord, getProjectDetail, getProjectLookups, listProjects, updateRecord } from '../api'
+	import {
+		createProject,
+		createRecord,
+		deleteRecord,
+		getProjectDetail,
+		getProjectLookups,
+		listProjects,
+		updateRecord
+	} from '../api'
 	import type { GenericRecord } from '../types'
 	import type {
 		FinancingCreatePayload,
@@ -25,12 +33,14 @@
 		ambientiMinimi: string
 		partecipantiMinimi: string
 	}
+
 	type LaboratoryFormState = {
 		idPlesso: string
 		laboratorio: string
 		aula: string
 		descrizione: string
 	}
+
 	type ModuleFormState = {
 		idLaboratorio: string
 		idTarget: string
@@ -39,10 +49,16 @@
 		discipline: string
 		professione: string
 	}
+
 	type TargetFormState = {
 		idCurriculum: string
 		abbreviazione: string
 		target: string
+	}
+
+	type ModuleObjectiveFormState = {
+		idObiettivo: string
+		priorita: string
 	}
 
 	let loading = true
@@ -53,13 +69,15 @@
 	let error = ''
 	let projects: ProjectSummary[] = []
 	let selectedProjectId: number | null = null
+	let selectedLaboratoryId: number | null = null
 	let detail: ProjectDetailResponse | null = null
-	let currentSection: 'overview' | 'laboratori' | 'moduli' = 'overview'
+	let currentSection: 'overview' | 'laboratori' | 'laboratorio' = 'overview'
 	let finanziamenti: LookupOption[] = []
 	let istituti: LookupOption[] = []
 	let plessi: LookupOption[] = []
 	let targetOptions: LookupOption[] = []
 	let curriculumOptions: LookupOption[] = []
+	let obiettiviOptions: LookupOption[] = []
 	let showProjectForm = false
 	let creatingFinancing = false
 	let creatingTarget = false
@@ -76,18 +94,21 @@
 		ambientiMinimi: '1',
 		partecipantiMinimi: '1'
 	}
+
 	let financingForm: Record<keyof FinancingCreatePayload, string> = {
 		tipo: '',
 		denominazione: '',
 		urlAvviso: '',
 		importo: '0'
 	}
+
 	let laboratoryForm: LaboratoryFormState = {
 		idPlesso: '',
 		laboratorio: '',
 		aula: '',
 		descrizione: ''
 	}
+
 	let moduleForm: ModuleFormState = {
 		idLaboratorio: '',
 		idTarget: '',
@@ -96,17 +117,25 @@
 		discipline: '',
 		professione: ''
 	}
+
 	let targetForm: TargetFormState = {
 		idCurriculum: '',
 		abbreviazione: '',
 		target: ''
 	}
 
+	let moduleObjectiveRows: ModuleObjectiveFormState[] = []
+
 	const currency = new Intl.NumberFormat('it-IT', {
 		style: 'currency',
 		currency: 'EUR',
 		maximumFractionDigits: 2
 	})
+
+	$: selectedLaboratory =
+		detail?.laboratori.find((laboratorio) => Number(laboratorio.id) === selectedLaboratoryId) ?? null
+	$: selectedLaboratoryModules =
+		detail?.moduli.filter((modulo) => Number(modulo.idLaboratorio) === selectedLaboratoryId) ?? []
 
 	const resetForm = () => {
 		form = {
@@ -141,7 +170,7 @@
 	const resetModuleForm = () => {
 		editingModuleId = null
 		moduleForm = {
-			idLaboratorio: '',
+			idLaboratorio: selectedLaboratoryId === null ? '' : String(selectedLaboratoryId),
 			idTarget: '',
 			modulo: '',
 			descrizione: '',
@@ -153,7 +182,22 @@
 			abbreviazione: '',
 			target: ''
 		}
+		moduleObjectiveRows = []
 		creatingTarget = false
+	}
+
+	const ensureSelectedLaboratory = (response: ProjectDetailResponse) => {
+		if (response.laboratori.length === 0) {
+			selectedLaboratoryId = null
+			return
+		}
+
+		const alreadySelected = response.laboratori.some(
+			(laboratorio) => Number(laboratorio.id) === selectedLaboratoryId
+		)
+		if (!alreadySelected) {
+			selectedLaboratoryId = Number(response.laboratori[0].id)
+		}
 	}
 
 	const loadProjects = async (preferredId?: number) => {
@@ -165,6 +209,7 @@
 
 			if (projects.length === 0) {
 				selectedProjectId = null
+				selectedLaboratoryId = null
 				detail = null
 				return
 			}
@@ -184,6 +229,7 @@
 		plessi = response.plessi
 		targetOptions = response.target
 		curriculumOptions = response.curriculum
+		obiettiviOptions = response.obiettivi
 		if (user.isAdmin) {
 			finanziamenti = response.finanziamenti
 		}
@@ -194,7 +240,9 @@
 		detailLoading = true
 		error = ''
 		try {
-			detail = await getProjectDetail(projectId)
+			const response = await getProjectDetail(projectId)
+			detail = response
+			ensureSelectedLaboratory(response)
 			resetLaboratoryForm()
 			resetModuleForm()
 			currentSection = 'overview'
@@ -210,6 +258,15 @@
 			return
 		}
 		await selectProject(selectedProjectId)
+		if (currentSection === 'overview' && selectedLaboratoryId !== null) {
+			resetModuleForm()
+		}
+	}
+
+	const openLaboratoryWorkspace = (laboratorio: ProjectLaboratory) => {
+		selectedLaboratoryId = Number(laboratorio.id)
+		currentSection = 'laboratorio'
+		resetModuleForm()
 	}
 
 	const saveProject = async () => {
@@ -248,6 +305,7 @@
 
 	const startLaboratoryEdit = (laboratorio: ProjectLaboratory) => {
 		currentSection = 'laboratori'
+		selectedLaboratoryId = Number(laboratorio.id)
 		editingLaboratoryId = Number(laboratorio.id)
 		laboratoryForm = {
 			idPlesso: String(laboratorio.idPlesso),
@@ -290,7 +348,8 @@
 	}
 
 	const startModuleEdit = (modulo: ProjectModule) => {
-		currentSection = 'moduli'
+		currentSection = 'laboratorio'
+		selectedLaboratoryId = Number(modulo.idLaboratorio)
 		editingModuleId = Number(modulo.id)
 		moduleForm = {
 			idLaboratorio: String(modulo.idLaboratorio),
@@ -300,6 +359,67 @@
 			discipline: modulo.discipline ?? '',
 			professione: modulo.professione ?? ''
 		}
+		moduleObjectiveRows = (detail?.obiettiviModulo ?? [])
+			.filter((item) => Number(item.idModulo) === Number(modulo.id))
+			.map((item) => ({
+				idObiettivo: String(item.idObiettivo),
+				priorita: String(item.priorita)
+			}))
+	}
+
+	const addObjectiveRow = () => {
+		moduleObjectiveRows = [...moduleObjectiveRows, { idObiettivo: '', priorita: '1' }]
+	}
+
+	const removeObjectiveRow = (index: number) => {
+		moduleObjectiveRows = moduleObjectiveRows.filter((_, rowIndex) => rowIndex !== index)
+	}
+
+	const syncModuleObjectives = async (moduleId: number) => {
+		const desiredRows = moduleObjectiveRows
+			.map((row) => ({
+				idObiettivo: Number(row.idObiettivo),
+				priorita: Number(row.priorita)
+			}))
+			.filter((row) => row.idObiettivo > 0)
+
+		const objectiveIds = desiredRows.map((row) => row.idObiettivo)
+		if (new Set(objectiveIds).size !== objectiveIds.length) {
+			throw new Error('Ogni obiettivo puo\' essere associato una sola volta al modulo.')
+		}
+		if (desiredRows.some((row) => row.priorita < 1)) {
+			throw new Error('La priorita\' degli obiettivi deve essere maggiore o uguale a 1.')
+		}
+
+		const existingRows = (detail?.obiettiviModulo ?? []).filter(
+			(item) => Number(item.idModulo) === moduleId
+		)
+		const desiredByObjective = new Map(desiredRows.map((row) => [row.idObiettivo, row.priorita]))
+
+		for (const existing of existingRows) {
+			const desiredPriority = desiredByObjective.get(Number(existing.idObiettivo))
+			if (desiredPriority === undefined) {
+				await deleteRecord('ObiettiviModulo', existing.id)
+				continue
+			}
+
+			if (Number(existing.priorita) !== desiredPriority) {
+				await updateRecord('ObiettiviModulo', existing.id, {
+					idModulo: moduleId,
+					idObiettivo: Number(existing.idObiettivo),
+					priorita: desiredPriority
+				} as GenericRecord)
+			}
+			desiredByObjective.delete(Number(existing.idObiettivo))
+		}
+
+		for (const [idObiettivo, priorita] of desiredByObjective.entries()) {
+			await createRecord('ObiettiviModulo', {
+				idModulo: moduleId,
+				idObiettivo,
+				priorita
+			} as GenericRecord)
+		}
 	}
 
 	const saveModule = async () => {
@@ -307,6 +427,10 @@
 		error = ''
 		try {
 			let targetId = Number(moduleForm.idTarget)
+			const laboratoryId = Number(moduleForm.idLaboratorio)
+			if (laboratoryId <= 0) {
+				throw new Error('Seleziona un laboratorio per il modulo.')
+			}
 
 			if (creatingTarget) {
 				if (detail === null) {
@@ -322,7 +446,7 @@
 			}
 
 			const payload = {
-				idLaboratorio: Number(moduleForm.idLaboratorio),
+				idLaboratorio: laboratoryId,
 				idTarget: targetId,
 				modulo: moduleForm.modulo.trim(),
 				descrizione: moduleForm.descrizione.trim() === '' ? null : moduleForm.descrizione.trim(),
@@ -330,14 +454,17 @@
 				professione: moduleForm.professione.trim() === '' ? null : moduleForm.professione.trim()
 			} as GenericRecord
 
-			if (editingModuleId === null) {
-				await createRecord('Modulo', payload)
+			let moduleId = editingModuleId
+			if (moduleId === null) {
+				moduleId = await createRecord('Modulo', payload)
 			} else {
-				await updateRecord('Modulo', editingModuleId, payload)
+				await updateRecord('Modulo', moduleId, payload)
 			}
 
+			await syncModuleObjectives(moduleId)
+			selectedLaboratoryId = laboratoryId
 			await refreshSelectedProject()
-			currentSection = 'moduli'
+			currentSection = 'laboratorio'
 			resetModuleForm()
 		} catch (saveError) {
 			error = saveError instanceof Error ? saveError.message : 'Errore nel salvataggio del modulo'
@@ -346,12 +473,30 @@
 		}
 	}
 
+	const objectiveSummary = (moduleId: number) => {
+		const objectives = (detail?.obiettiviModulo ?? []).filter(
+			(item) => Number(item.idModulo) === Number(moduleId)
+		)
+		if (objectives.length === 0) {
+			return 'Nessun obiettivo associato'
+		}
+		return objectives
+			.map((item) => `P${item.priorita} · ${item.tipoObiettivo}`)
+			.join(', ')
+	}
+
+	const detailedObjectiveSummary = (moduleId: number) => {
+		return (detail?.obiettiviModulo ?? []).filter(
+			(item) => Number(item.idModulo) === Number(moduleId)
+		)
+	}
+
 	const detailTitle = () => {
 		if (currentSection === 'laboratori') {
 			return 'Laboratori del progetto'
 		}
-		if (currentSection === 'moduli') {
-			return 'Moduli del progetto'
+		if (currentSection === 'laboratorio') {
+			return selectedLaboratory ? `Scheda laboratorio · ${selectedLaboratory.laboratorio}` : 'Scheda laboratorio'
 		}
 		return 'Progetto selezionato'
 	}
@@ -366,7 +511,7 @@
 	<header class="section-header">
 		<div>
 			<h2>Progetti</h2>
-			<p>Seleziona un progetto e naviga verso i laboratori o i moduli associati.</p>
+			<p>Seleziona un progetto e passa dalla scheda progetto alla progettazione del laboratorio.</p>
 		</div>
 		{#if user.isAdmin}
 			<button class="secondary" type="button" on:click={() => (showProjectForm = !showProjectForm)}>
@@ -526,7 +671,15 @@
 					<div class="project-detail-actions">
 						<button class:active={currentSection === 'overview'} class="secondary" type="button" on:click={() => (currentSection = 'overview')}>Progetto</button>
 						<button class:active={currentSection === 'laboratori'} class="secondary" type="button" on:click={() => (currentSection = 'laboratori')}>Laboratori</button>
-						<button class:active={currentSection === 'moduli'} class="secondary" type="button" on:click={() => (currentSection = 'moduli')}>Moduli</button>
+						<button
+							class:active={currentSection === 'laboratorio'}
+							class="secondary"
+							type="button"
+							disabled={selectedLaboratoryId === null}
+							on:click={() => (currentSection = 'laboratorio')}
+						>
+							Scheda laboratorio
+						</button>
 					</div>
 				</header>
 
@@ -557,6 +710,9 @@
 							<strong>Vincoli strutturali:</strong>
 							{detail.project.vincoliRispettati === 1 ? ' rispettati' : ' da completare'}
 						</p>
+						{#if selectedLaboratory}
+							<p><strong>Laboratorio attivo:</strong> {selectedLaboratory.laboratorio}</p>
+						{/if}
 					</div>
 				{:else if currentSection === 'laboratori'}
 					<div class="editor-layout">
@@ -611,13 +767,14 @@
 								</thead>
 								<tbody>
 									{#each detail.laboratori as laboratorio}
-										<tr class:selected-row={editingLaboratoryId === Number(laboratorio.id)}>
+										<tr class:selected-row={selectedLaboratoryId === Number(laboratorio.id)}>
 											<td>{laboratorio.laboratorio}</td>
 											<td>{laboratorio.plesso}</td>
 											<td>{laboratorio.aula ?? '—'}</td>
 											<td>{currency.format(Number(laboratorio.costoTotale ?? 0))}</td>
 											<td class="row-actions">
-												<button class="secondary" type="button" on:click={() => startLaboratoryEdit(laboratorio)}>Apri</button>
+												<button class="secondary" type="button" on:click={() => startLaboratoryEdit(laboratorio)}>Modifica</button>
+												<button class="secondary" type="button" on:click={() => openLaboratoryWorkspace(laboratorio)}>Scheda</button>
 											</td>
 										</tr>
 									{/each}
@@ -625,26 +782,68 @@
 							</table>
 						</div>
 					</div>
-				{:else}
+				{:else if selectedLaboratory}
+					<div class="laboratory-summary card nested-card">
+						<div>
+							<p class="eyebrow">Laboratorio attivo</p>
+							<h4>{selectedLaboratory.laboratorio}</h4>
+							<p>
+								<strong>Plesso:</strong> {selectedLaboratory.plesso}
+								{#if selectedLaboratory.aula}
+									· <strong>Aula:</strong> {selectedLaboratory.aula}
+								{/if}
+							</p>
+						</div>
+						<div class="laboratory-summary-metrics">
+							<span><strong>Moduli:</strong> {selectedLaboratoryModules.length}</span>
+							<span><strong>Budget:</strong> {currency.format(Number(selectedLaboratory.costoTotale ?? 0))}</span>
+						</div>
+						{#if selectedLaboratory.descrizione}
+							<p>{selectedLaboratory.descrizione}</p>
+						{/if}
+						<div class="laboratory-switcher">
+							{#each detail.laboratori as laboratorio}
+								<button
+									class:selected={selectedLaboratoryId === Number(laboratorio.id)}
+									class="secondary"
+									type="button"
+									on:click={() => {
+										selectedLaboratoryId = Number(laboratorio.id)
+										resetModuleForm()
+									}}
+								>
+									{laboratorio.laboratorio}
+								</button>
+							{/each}
+						</div>
+					</div>
+
 					<div class="editor-layout">
 						<form class="card editor-card" on:submit|preventDefault={saveModule}>
 							<div class="section-header compact-header">
 								<div>
 									<h3>{editingModuleId === null ? 'Nuovo modulo' : `Modulo #${editingModuleId}`}</h3>
-									<p>Crea un modulo oppure aprine uno esistente dal progetto selezionato.</p>
+									<p>Completa la scheda didattica del laboratorio con target e obiettivi prioritizzati.</p>
 								</div>
 								<button class="secondary" type="button" on:click={resetModuleForm}>Nuovo</button>
 							</div>
 
 							<label class="field">
 								<span>Laboratorio</span>
-								<select bind:value={moduleForm.idLaboratorio} required>
+								<select
+									bind:value={moduleForm.idLaboratorio}
+									required
+									on:change={() => {
+										selectedLaboratoryId = Number(moduleForm.idLaboratorio)
+									}}
+								>
 									<option value="">Seleziona...</option>
 									{#each detail.laboratori as laboratorio}
 										<option value={String(laboratorio.id)}>{laboratorio.laboratorio}</option>
 									{/each}
 								</select>
 							</label>
+
 							<label class="field">
 								<span>Target</span>
 								{#if creatingTarget}
@@ -668,6 +867,7 @@
 									{creatingTarget ? 'Usa un target esistente' : 'Crea nuovo target'}
 								</button>
 							</label>
+
 							{#if creatingTarget}
 								<div class="card nested-card">
 									<h4>Nuovo target</h4>
@@ -690,6 +890,7 @@
 									</label>
 								</div>
 							{/if}
+
 							<label class="field">
 								<span>Modulo</span>
 								<input bind:value={moduleForm.modulo} required />
@@ -707,6 +908,39 @@
 								<input bind:value={moduleForm.professione} />
 							</label>
 
+							<div class="objectives-editor">
+								<div class="section-header compact-header">
+									<div>
+										<h4>Obiettivi del modulo</h4>
+										<p>Associa uno o piu' obiettivi e assegna una priorita' esplicita.</p>
+									</div>
+									<button class="secondary" type="button" on:click={addObjectiveRow}>Aggiungi obiettivo</button>
+								</div>
+
+								{#if moduleObjectiveRows.length === 0}
+									<p class="muted small-text">Nessun obiettivo associato. Puoi salvare il modulo o aggiungere gli obiettivi ora.</p>
+								{/if}
+
+								{#each moduleObjectiveRows as row, index}
+									<div class="objective-row">
+										<label class="field">
+											<span>Obiettivo</span>
+											<select bind:value={moduleObjectiveRows[index].idObiettivo} required>
+												<option value="">Seleziona...</option>
+												{#each obiettiviOptions as item}
+													<option value={String(item.id)}>{item.label}</option>
+												{/each}
+											</select>
+										</label>
+										<label class="field priority-field">
+											<span>Priorita'</span>
+											<input type="number" bind:value={moduleObjectiveRows[index].priorita} min="1" step="1" required />
+										</label>
+										<button class="danger" type="button" on:click={() => removeObjectiveRow(index)}>Rimuovi</button>
+									</div>
+								{/each}
+							</div>
+
 							<div class="actions">
 								<button type="submit" disabled={savingModule}>
 									{savingModule ? 'Salvataggio...' : editingModuleId === null ? 'Crea modulo' : 'Salva modulo'}
@@ -719,30 +953,50 @@
 								<thead>
 									<tr>
 										<th>Modulo</th>
-										<th>Laboratorio</th>
 										<th>Target</th>
 										<th>Discipline</th>
-										<th>Profilo</th>
+										<th>Obiettivi</th>
 										<th>Azioni</th>
 									</tr>
 								</thead>
 								<tbody>
-									{#each detail.moduli as modulo}
-										<tr class:selected-row={editingModuleId === Number(modulo.id)}>
-											<td>{modulo.modulo}</td>
-											<td>{modulo.laboratorio}</td>
-											<td>{modulo.target}</td>
-											<td>{modulo.discipline ?? '—'}</td>
-											<td>{modulo.professione ?? '—'}</td>
-											<td class="row-actions">
-												<button class="secondary" type="button" on:click={() => startModuleEdit(modulo)}>Apri</button>
-											</td>
+									{#if selectedLaboratoryModules.length === 0}
+										<tr>
+											<td colspan="5">Nessun modulo ancora associato a questo laboratorio.</td>
 										</tr>
-									{/each}
+									{:else}
+										{#each selectedLaboratoryModules as modulo}
+											<tr class:selected-row={editingModuleId === Number(modulo.id)}>
+												<td>
+													<strong>{modulo.modulo}</strong>
+													{#if modulo.professione}
+														<div class="muted small-text">{modulo.professione}</div>
+													{/if}
+												</td>
+												<td>{modulo.target}</td>
+												<td>{modulo.discipline ?? '—'}</td>
+												<td>
+													<div>{objectiveSummary(modulo.id)}</div>
+													{#if modulo.obiettiviCount > 0}
+														<ul class="objective-summary-list">
+															{#each detailedObjectiveSummary(modulo.id) as objective}
+																<li>P{objective.priorita} · {objective.obiettivo}</li>
+															{/each}
+														</ul>
+													{/if}
+												</td>
+												<td class="row-actions">
+													<button class="secondary" type="button" on:click={() => startModuleEdit(modulo)}>Apri</button>
+												</td>
+											</tr>
+										{/each}
+									{/if}
 								</tbody>
 							</table>
 						</div>
 					</div>
+				{:else}
+					<p>Seleziona o crea un laboratorio per iniziare la progettazione didattica.</p>
 				{/if}
 			{:else}
 				<p>Seleziona un progetto per vedere i dettagli.</p>

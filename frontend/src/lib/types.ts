@@ -86,12 +86,23 @@ export interface ProjectModule {
 	professione: string | null
 	laboratorio: string
 	target: string
+	obiettiviCount: number
+}
+
+export interface ProjectModuleObjective {
+	id: number
+	idModulo: number
+	idObiettivo: number
+	priorita: number
+	obiettivo: string
+	tipoObiettivo: string
 }
 
 export interface ProjectDetailResponse {
 	project: ProjectSummary
 	laboratori: ProjectLaboratory[]
 	moduli: ProjectModule[]
+	obiettiviModulo: ProjectModuleObjective[]
 }
 
 export interface LookupOption {
@@ -105,6 +116,7 @@ export interface ProjectLookupsResponse {
 	plessi: LookupOption[]
 	target: LookupOption[]
 	curriculum: LookupOption[]
+	obiettivi: LookupOption[]
 }
 
 export interface FinancingCreatePayload {
