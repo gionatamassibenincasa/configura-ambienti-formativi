@@ -433,6 +433,19 @@ th {
 	background: rgba(14, 165, 233, 0.08);
 }
 
+.goods-layout {
+	margin-top: 1rem;
+}
+
+.goods-panel {
+	display: grid;
+	gap: 1rem;
+}
+
+.goods-summary-card {
+	min-width: 0;
+}
+
 .laboratory-summary {
 	display: grid;
 	gap: 0.9rem;
@@ -493,6 +506,22 @@ th {
 
 .objective-summary-list li {
 	margin-bottom: 0.25rem;
+}
+
+.voice-summary-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 0.65rem;
+}
+
+.voice-summary-list li {
+	display: flex;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-bottom: 0.65rem;
+	border-bottom: 1px solid var(--line);
 }
 
 @media (max-width: 1200px) {

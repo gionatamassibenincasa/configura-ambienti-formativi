@@ -57,8 +57,8 @@
 		<aside class="sidebar">
 			<div class="brand">
 				<p class="eyebrow">Ambienti laboratoriali</p>
-				<h1>Sprint 1</h1>
-				<p>Selezione progetto, login locale e navigazione verso laboratori e moduli.</p>
+				<h1>Sprint 3</h1>
+				<p>Progetto, scheda laboratorio, moduli didattici e piano iniziale di beni e attrezzature.</p>
 			</div>
 
 			<div class="card user-card">

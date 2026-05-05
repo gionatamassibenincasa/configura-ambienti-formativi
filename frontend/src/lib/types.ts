@@ -98,16 +98,49 @@ export interface ProjectModuleObjective {
 	tipoObiettivo: string
 }
 
+export interface ProjectCostLine {
+	id: number
+	idLaboratorio: number
+	idVoce: number
+	idFornitura: number
+	descrizione: string | null
+	quantita: number
+	lettera: string
+	voce: string
+	fornitura: string
+	tipoFornitura: string
+	fornitore: string | null
+	prezzo: string | number
+	costoTotale: string | number
+}
+
+export interface ProjectCostByVoice {
+	idLaboratorio: number
+	idVoce: number
+	lettera: string
+	voce: string
+	costoTotaleVoce: string | number
+}
+
 export interface ProjectDetailResponse {
 	project: ProjectSummary
 	laboratori: ProjectLaboratory[]
 	moduli: ProjectModule[]
 	obiettiviModulo: ProjectModuleObjective[]
+	costi: ProjectCostLine[]
+	costiPerVoce: ProjectCostByVoice[]
 }
 
 export interface LookupOption {
 	id: number
 	label: string
+}
+
+export interface SupplyLookupOption extends LookupOption {
+	fornitura: string
+	tipoFornitura: string
+	fornitore: string | null
+	prezzo: string | number
 }
 
 export interface ProjectLookupsResponse {
@@ -117,6 +150,10 @@ export interface ProjectLookupsResponse {
 	target: LookupOption[]
 	curriculum: LookupOption[]
 	obiettivi: LookupOption[]
+	voci: LookupOption[]
+	tipiFornitura: LookupOption[]
+	fornitori: LookupOption[]
+	forniture: SupplyLookupOption[]
 }
 
 export interface FinancingCreatePayload {

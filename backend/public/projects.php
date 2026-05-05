@@ -58,6 +58,32 @@ if ($method === 'GET') {
                 ORDER BY t.tipoObiettivo, o.id
             SQL
         )->fetchAll();
+        $voci = $pdo->query(
+            <<<SQL
+                SELECT
+                    id,
+                    CONCAT(lettera, ' - ', voce) AS label
+                FROM Voce
+                ORDER BY lettera, voce
+            SQL
+        )->fetchAll();
+        $tipiFornitura = $pdo->query('SELECT id, tipoFornitura AS label FROM TipoFornitura ORDER BY tipoFornitura')->fetchAll();
+        $fornitori = $pdo->query('SELECT id, fornitore AS label FROM Fornitore ORDER BY fornitore')->fetchAll();
+        $forniture = $pdo->query(
+            <<<SQL
+                SELECT
+                    f.id,
+                    CONCAT(f.fornitura, ' · ', tf.tipoFornitura, ' · ', COALESCE(fo.fornitore, 'senza fornitore')) AS label,
+                    f.fornitura,
+                    tf.tipoFornitura,
+                    fo.fornitore,
+                    f.prezzo
+                FROM Fornitura f
+                INNER JOIN TipoFornitura tf ON tf.id = f.idTipoFornitura
+                LEFT JOIN Fornitore fo ON fo.id = f.idFornitore
+                ORDER BY tf.tipoFornitura, f.fornitura
+            SQL
+        )->fetchAll();
         app_json([
             'finanziamenti' => $finanziamenti,
             'istituti' => $istituti,
@@ -65,6 +91,10 @@ if ($method === 'GET') {
             'target' => $target,
             'curriculum' => $curriculum,
             'obiettivi' => $obiettivi,
+            'voci' => $voci,
+            'tipiFornitura' => $tipiFornitura,
+            'fornitori' => $fornitori,
+            'forniture' => $forniture,
         ]);
     }
 
@@ -156,11 +186,57 @@ if ($method === 'GET') {
         );
         $obiettiviModuloStatement->execute(['id' => $projectId]);
 
+        $costiStatement = $pdo->prepare(
+            <<<SQL
+                SELECT
+                    c.id,
+                    c.idLaboratorio,
+                    c.idVoce,
+                    c.idFornitura,
+                    c.descrizione,
+                    c.quantita,
+                    v.lettera,
+                    v.voce,
+                    f.fornitura,
+                    tf.tipoFornitura,
+                    fo.fornitore,
+                    f.prezzo,
+                    (c.quantita * f.prezzo) AS costoTotale
+                FROM Costo c
+                INNER JOIN Laboratorio l ON l.id = c.idLaboratorio
+                INNER JOIN Voce v ON v.id = c.idVoce
+                INNER JOIN Fornitura f ON f.id = c.idFornitura
+                INNER JOIN TipoFornitura tf ON tf.id = f.idTipoFornitura
+                LEFT JOIN Fornitore fo ON fo.id = f.idFornitore
+                WHERE l.idProgetto = :id
+                ORDER BY l.laboratorio, v.lettera, f.fornitura, c.id
+            SQL
+        );
+        $costiStatement->execute(['id' => $projectId]);
+
+        $costiPerVoceStatement = $pdo->prepare(
+            <<<SQL
+                SELECT
+                    cpv.idLaboratorio,
+                    v.id AS idVoce,
+                    v.lettera,
+                    cpv.voce,
+                    cpv.costoTotaleVoce
+                FROM CostoPerVoce cpv
+                INNER JOIN Voce v ON v.voce = cpv.voce
+                WHERE cpv.idProgetto = :id
+                ORDER BY cpv.idLaboratorio, v.lettera
+            SQL
+        );
+        $costiPerVoceStatement->execute(['id' => $projectId]);
+
         app_json([
             'project' => $project,
             'laboratori' => $laboratoriStatement->fetchAll(),
             'moduli' => $moduliStatement->fetchAll(),
             'obiettiviModulo' => $obiettiviModuloStatement->fetchAll(),
+            'costi' => $costiStatement->fetchAll(),
+            'costiPerVoce' => $costiPerVoceStatement->fetchAll(),
         ]);
     }
 
