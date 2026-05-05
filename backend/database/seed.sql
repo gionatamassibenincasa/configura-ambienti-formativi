@@ -166,20 +166,53 @@ INSERT INTO Plesso (id, idIstituto, plesso, indirizzo) VALUES
 
 INSERT INTO Finanziamento (id, tipo, denominazione, urlAvviso, importo) VALUES
     (1, 'POC', 'Per la scuola', 'https://www.mim.gov.it/documents/20182/8938100/m_pi.AOOGABMI.REGISTRO+UFFICIALE%28U%29.0088643.03-06-2025.pdf/25e5ef54-2a3f-4fda-b4c4-b9a0cb52d2b4?t=1748959520204', 201000.0),
-    (2, 'PNRR', 'Scuola 4.0: scuole innovative, cablaggio, nuovi ambienti di apprendimento e laboratori', 'https://www.mim.gov.it/documents/8099600/8783257/m_pi.AOOGABMI.REGISTRO-UFFICIALEU.0089057.03-06-2025.pdf/02b9f70d-7237-4bf5-59e9-cd63569fb061?version=1.0&t=1749458687505', 750000.0);
+    (2, 'PNRR', 'Scuola 4.0: scuole innovative, cablaggio, nuovi ambienti di apprendimento e laboratori', 'https://www.mim.gov.it/documents/8099600/8783257/m_pi.AOOGABMI.REGISTRO-UFFICIALEU.0089057.03-06-2025.pdf/02b9f70d-7237-4bf5-59e9-cd63569fb061?version=1.0&t=1749458687505', 750000.0),
+    (3, 'PN', 'PN Scuola e competenze 2021-2027 [...] risorse per l’acquisto di tablet, PC, dispositivi digitali, libri e sussidi didattici da fornire in comodato d’uso al personale della scuola', 'https://www.mim.gov.it/documents/8099600/8783257/m_pi.AOOGABMI.REGISTRO-UFFICIALEU.0089057.03-06-2025.pdf/02b9f70d-7237-4bf5-59e9-cd63569fb061?version=1.0&t=1749458687505', 0);
 
-INSERT INTO Laboratorio (id, idPlesso, idFinanziamento, laboratorio, aula, descrizione) VALUES
+INSERT INTO Utente (id, username, passwordHash, nome, attivo) VALUES
+    (1, 'massi', '$2y$12$c2IpSqJGZOJ/AxEI7fOLkusZA7qngo18b/qwEeTXUGrIpsElgzysy', 'Massi', 1),
+    (2, 'bernacchia', '$2y$12$gUlPBHKkkuYp5t9sQFbja.5Ewz6UDCWAxzjSaylxhpEV.hOmyTMZm', 'Bernacchia', 1);
+
+INSERT INTO Ruolo (id, ruolo, descrizione) VALUES
+    (1, 'amministratore', 'Utente che puo'' creare nuovi progetti e amministrare l''applicazione.'),
+    (2, 'docente', 'Docente progettista che opera sui progetti e sui laboratori di pertinenza.');
+
+INSERT INTO RuoloUtente (id, idUtente, idRuolo) VALUES
+    (1, 1, 1),
+    (2, 2, 2);
+
+INSERT INTO Progetto (id, idFinanziamento, idIstitutoCapofila, codice, progetto, tipologia, descrizione, ambientiMinimi, partecipantiMinimi) VALUES
+    (1, 1, 1, 'PRG-01-01', 'Per la scuola - IIS Savoia Benincasa', 'laboratorio', NULL, 1, 1),
+    (2, 3, 1, 'PN21-27', 'Allestimento aula colloqui plesso Benincasa', 'laboratorio', 'Dispositivi per lo svolgimento dei colloqui online. Laboratorio rilocabile composto da SBC, monitor portatili, webcam, cuffie e microfoni. Una workstation agisce da server per la distribuzione del sistema operativo tramite Linux Terminal Server Project.', 1, 1);
+
+INSERT INTO TipoAggregazione (id, tipoAggregazione, descrizione) VALUES
+    (1, 'partenariato', 'Collaborazione formale tra capofila e altri istituti aderenti al campus.'),
+    (2, 'rete', 'Rete organizzata di istituti partecipanti al campus.');
+
+-- Campus: nessun record da importare
+
+-- CampusPartecipante: nessun record da importare
+
+INSERT INTO Laboratorio (id, idPlesso, idProgetto, laboratorio, aula, descrizione) VALUES
     (1, 1, 1, 'Management and Operations', 'Laboratorio Informatica', NULL),
     (2, 1, 1, 'Data Science and Artificial Intelligence', 'Aula sdoppiamento', NULL),
     (3, 1, 1, 'Cybersecurity and Physical Computing', 'Aula sdoppiamento', NULL),
     (4, 1, 1, 'Multimedia and Videogame Development', 'Aula sdoppiamento', NULL),
-    (5, 1, 1, 'Digital Travels and Digital Art', 'Aula "Viviana Giovannetti"', NULL);
+    (5, 1, 1, 'Digital Travels and Digital Art', 'Aula "Viviana Giovannetti"', NULL),
+    (6, 1, 2, 'Aula colloqui', '4.09', 'Allestimento aula per colloqui online oppure per cedere in comodato d''uso ai docenti');
 
 INSERT INTO TipoObiettivo (id, tipoObiettivo, descrizione) VALUES
     (1, 'Generale', 'Sono obiettivi ampi e di lungo respiro, che definiscono la direzione generale del percorso formativo. Ad esempio, "sviluppare capacità di pensiero critico".'),
     (2, 'Specifico', 'Sono obiettivi più dettagliati e concreti, che descrivono cosa si intende raggiungere in termini di conoscenze, abilità e comportamenti specifici. Ad esempio, "essere in grado di analizzare un testo argomentativo identificando tesi e argomenti".');
 
--- Obiettivo: nessun record da importare
+INSERT INTO Obiettivo (id, idTipoObiettivo, obiettivo) VALUES
+    (1, 1, 'Sviluppare competenze digitali, collaborative e organizzative coerenti con il contesto laboratoriale del progetto.'),
+    (2, 1, 'Promuovere l''uso consapevole delle tecnologie per attivita'' didattiche, progettuali e di documentazione.'),
+    (3, 2, 'Configurare e utilizzare dispositivi hardware, software e servizi di rete funzionali alle attivita'' del laboratorio.'),
+    (4, 2, 'Realizzare elaborati, prototipi o prodotti digitali coerenti con il target formativo del modulo.'),
+    (5, 2, 'Analizzare problemi operativi del contesto scolastico o professionale e proporre soluzioni supportate da strumenti digitali.'),
+    (6, 2, 'Documentare fasi, risultati e criticita'' delle attivita'' svolte nel laboratorio con linguaggio tecnico appropriato.');
+
 INSERT INTO Modulo (id, idLaboratorio, idTarget, modulo, descrizione, discipline, professione) VALUES
     (1, 1, 1, 'Management and Operations', 'Laboratorio per lo sviluppo di competenze nella gestione aziendale, ottimizzazione dei processi e implementazione di soluzioni informatiche. Per semplificare le operazioni di manutenzione, un server mantiene l''immagine aggiornata del sistema operativo, che viene caricata dai PC all''avvio (netboot). I dati degli utenti sono salvati su un server Samba. Il disco locale è usato come cache per il sistema operativo e come eventuale partizione di swap. Le credenziali di accesso sono memorizzare al fine di consentire un accesso con singola password (Single Sign-On)', 'Il modulo di Management e Operations permette di svolgere percorsi didattici multidisciplinari di Economia Aziendale, Informatica, Matematica e altre discipline del triennio SIA', 'Ragioniere programmatore'),
     (2, 2, 3, 'Data Science and Artificial Intelligence', 'Laboratorio per lo sviluppo di competenze nell''analisi dei dati aziendali, la definizione di azioni a partire da modelli quantitativi e l''uso di strumenti d''inferenza statistica quali i recenti modelli delle reti neurali artificiali. Il modulo prevede anche l''interazione con oggetti del mondo fisico attraverso sensori d''immagine e casi applicativi legati all''intelligenza artificiale legati alla regressione, alla classificazione e alla clusterizzazione. Al fine di aumentare il coinvolgimento verranno utilizzati esempi di Computer Vision.', 'Percorsi didattici multidisciplinari di Economia Aziendale, Informatica, Matematica e altre discipline del triennio SIA', 'Data analyst'),
@@ -325,3 +358,4 @@ INSERT INTO Costo (id, idVoce, idLaboratorio, idFornitura, descrizione, quantita
     (56, 3, 5, 26, NULL, 1);
 
 -- ObiettiviModulo: nessun record da importare
+

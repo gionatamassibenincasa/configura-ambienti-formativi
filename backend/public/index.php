@@ -53,7 +53,7 @@ $statusUrl = './api.php/status';
             <li><a href="<?= htmlspecialchars($openApiUrl, ENT_QUOTES) ?>"><?= htmlspecialchars($openApiUrl, ENT_QUOTES) ?></a></li>
             <li><a href="<?= htmlspecialchars($statusUrl, ENT_QUOTES) ?>"><?= htmlspecialchars($statusUrl, ENT_QUOTES) ?></a></li>
         </ul>
-        <p>Esempio CRUD: <code>/api.php/records/Laboratorio</code></p>
+        <p>Esempio CRUD: <code>/api.php/records/Progetto</code></p>
     </div>
 
     <div class="card">
@@ -63,4 +63,3 @@ $statusUrl = './api.php/status';
 </main>
 </body>
 </html>
-

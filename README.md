@@ -11,6 +11,15 @@ La cartella `LabCRUD/` resta un riferimento legacy per dominio e dati. L'applica
 - `backend/`
 - `frontend/`
 
+## Accesso locale di esempio
+
+Dopo l'import del seed sono disponibili questi account:
+
+| Ruolo | Username | Password |
+| --- | --- | --- |
+| amministratore | `massi` | `gionata` |
+| docente | `bernacchia` | `andrea` |
+
 ## Struttura
 
 ### `backend/`
@@ -56,10 +65,12 @@ APP_DEBUG=false
 2. Imposta le credenziali MySQL 8.0.
 3. Rigenera il seed legacy.
 4. Importa schema e dati.
+5. Verifica la migrazione.
 
 ```bash
 python backend/database/export_legacy_seed.py
 cat backend/database/schema.sql backend/database/seed.sql | mysql -u gim -p my_gim
+python backend/database/verify_migration.py
 ```
 
 ## Avvio su host Apache2 + PHP
@@ -131,7 +142,8 @@ URL utili:
 - `http://ambienti-formativi.local/`
 - `http://ambienti-formativi.local/api.php/status/ping`
 - `http://ambienti-formativi.local/api.php/openapi`
-- `http://ambienti-formativi.local/api.php/records/Laboratorio`
+- `http://ambienti-formativi.local/auth.php`
+- `http://ambienti-formativi.local/projects.php`
 
 ## Avvio locale senza Apache
 
@@ -153,5 +165,5 @@ In sviluppo, Vite fa proxy verso `http://127.0.0.1:8080`.
 
 ## TODO
 
-- riprogettare i moduli con una navigazione lineare guidata, ad esempio: `Finanziamento > Istituto > Laboratorio > Forniture`
+- riprogettare i moduli con una navigazione lineare guidata, ad esempio: `Finanziamento > Progetto > Laboratorio > Forniture`
 - riprogettare le viste con aggregazioni piu' orientate al dominio, ad esempio una vista del singolo laboratorio con tutte le forniture collegate

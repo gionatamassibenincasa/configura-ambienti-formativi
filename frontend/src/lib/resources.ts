@@ -92,7 +92,7 @@ export const resources: ResourceDefinition[] = [
 		key: 'Finanziamento',
 		table: 'Finanziamento',
 		title: 'Finanziamenti',
-		description: 'Fonti di finanziamento dei laboratori.',
+		description: 'Fonti di finanziamento dei progetti.',
 		fields: [
 			{ key: 'tipo', label: 'Tipo', type: 'text', required: true },
 			{ key: 'denominazione', label: 'Denominazione', type: 'text', required: true },
@@ -101,13 +101,62 @@ export const resources: ResourceDefinition[] = [
 		]
 	},
 	{
+		key: 'Progetto',
+		table: 'Progetto',
+		title: 'Progetti',
+		description: 'Contenitore progettuale associato a finanziamento e istituto capofila.',
+		fields: [
+			{ key: 'idFinanziamento', label: 'Finanziamento', type: 'select', lookup: 'Finanziamento', optionLabel: 'denominazione', required: true },
+			{ key: 'idIstitutoCapofila', label: 'Istituto capofila', type: 'select', lookup: 'Istituto', optionLabel: 'istituto', required: true },
+			{ key: 'codice', label: 'Codice progetto', type: 'text', required: true },
+			{ key: 'progetto', label: 'Progetto', type: 'text', required: true },
+			{ key: 'tipologia', label: 'Tipologia', type: 'text', required: true },
+			{ key: 'descrizione', label: 'Descrizione', type: 'textarea' },
+			{ key: 'ambientiMinimi', label: 'Ambienti minimi', type: 'number', required: true, min: 1 },
+			{ key: 'partecipantiMinimi', label: 'Partecipanti minimi', type: 'number', required: true, min: 1 }
+		]
+	},
+	{
+		key: 'TipoAggregazione',
+		table: 'TipoAggregazione',
+		title: 'Tipi aggregazione',
+		description: 'Classifica il campus come partenariato o rete.',
+		fields: [
+			{ key: 'tipoAggregazione', label: 'Tipo aggregazione', type: 'text', required: true },
+			{ key: 'descrizione', label: 'Descrizione', type: 'textarea' }
+		]
+	},
+	{
+		key: 'Campus',
+		table: 'Campus',
+		title: 'Campus',
+		description: 'Campus opzionale associato a un progetto.',
+		fields: [
+			{ key: 'idProgetto', label: 'Progetto', type: 'select', lookup: 'Progetto', optionLabel: 'progetto', required: true },
+			{ key: 'idTipoAggregazione', label: 'Tipo aggregazione', type: 'select', lookup: 'TipoAggregazione', optionLabel: 'tipoAggregazione', required: true },
+			{ key: 'campus', label: 'Campus', type: 'text', required: true },
+			{ key: 'descrizione', label: 'Descrizione', type: 'textarea' }
+		]
+	},
+	{
+		key: 'CampusPartecipante',
+		table: 'CampusPartecipante',
+		title: 'Partecipanti campus',
+		description: 'Istituti partecipanti al campus oltre al capofila.',
+		fields: [
+			{ key: 'idCampus', label: 'Campus', type: 'select', lookup: 'Campus', optionLabel: 'campus', required: true },
+			{ key: 'idIstituto', label: 'Istituto', type: 'select', lookup: 'Istituto', optionLabel: 'istituto', required: true },
+			{ key: 'ruolo', label: 'Ruolo', type: 'text' }
+		]
+	},
+	{
 		key: 'Laboratorio',
 		table: 'Laboratorio',
 		title: 'Laboratori',
-		description: 'Ambienti progettati e associati a plesso e finanziamento.',
+		description: 'Ambienti progettati e associati a plesso e progetto.',
 		fields: [
 			{ key: 'idPlesso', label: 'Plesso', type: 'select', lookup: 'Plesso', optionLabel: 'plesso', required: true },
-			{ key: 'idFinanziamento', label: 'Finanziamento', type: 'select', lookup: 'Finanziamento', optionLabel: 'denominazione', required: true },
+			{ key: 'idProgetto', label: 'Progetto', type: 'select', lookup: 'Progetto', optionLabel: 'progetto', required: true },
 			{ key: 'laboratorio', label: 'Laboratorio', type: 'text', required: true },
 			{ key: 'aula', label: 'Aula', type: 'text' },
 			{ key: 'descrizione', label: 'Descrizione', type: 'textarea' }
@@ -228,11 +277,10 @@ export const resourceGroups = [
 	},
 	{
 		title: 'Progettazione',
-		keys: ['Finanziamento', 'Laboratorio', 'TipoObiettivo', 'Obiettivo', 'Modulo', 'ObiettiviModulo']
+		keys: ['Finanziamento', 'Progetto', 'TipoAggregazione', 'Campus', 'CampusPartecipante', 'Laboratorio', 'TipoObiettivo', 'Obiettivo', 'Modulo', 'ObiettiviModulo']
 	},
 	{
 		title: 'Acquisti',
 		keys: ['Fornitore', 'TipoFornitura', 'Fornitura', 'Voce', 'Costo']
 	}
 ]
-
